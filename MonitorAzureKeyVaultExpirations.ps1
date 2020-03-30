@@ -33,7 +33,7 @@ $keyvaults = (Get-AzKeyVault).VaultName
 
 Write-Output $keyvaults
 
-#Set storage context and date
+#Set date and Logic App URL
 
 $date = (Get-Date).ToString("yyyy-MM-dd")
 
@@ -102,7 +102,130 @@ foreach($key in $keys){
     }
 }
 
+#Check KeyVault Secrets expiration
 
+$secrets = Get-AzKeyVaultSecret -VaultName $keyvaults
+foreach($secret in $secrets){
+    if($secret.Expires){
+    $secretname = $secret.Name
+    $expires = $secret.Expires 
+
+    $expirydate = ($expires).ToString("yyyy-MM-dd")
+
+    $twoweeksbeforeexpiry = ($expires).AddDays(-14).ToString("yyyy-MM-dd")
+    $oneweekbeforeexpiry = ($expires).AddDays(-7).ToString("yyyy-MM-dd")
+    $onedaybeforeexpiry = ($expires).AddDays(-1).ToString("yyyy-MM-dd")
+
+    if($date -eq $twoweeksbeforeexpiry){
+        $subject = "$secretname Secret in KeyVault $keyvaults expires in two weeks"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    elseif($date -eq $oneweekbeforeexpiry){
+        $subject = "$secretname Secret in KeyVault $keyvaults expires in one week"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    elseif($date -eq $onedaybeforeexpiry){
+        $subject = "$secretname Secret in KeyVault $keyvaults expires in one day"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    }
+}
+
+#Check KeyVault Certificates expiration
+
+$certificates = Get-AzKeyVaultCertificate -VaultName $keyvaults
+foreach($certificate in $certificates){
+    if($certificate.Expires){
+    $certificatename = $certificate.Name
+    $expires = $certificate.Expires 
+
+    $expirydate = ($expires).ToString("yyyy-MM-dd")
+
+    $twoweeksbeforeexpiry = ($expires).AddDays(-14).ToString("yyyy-MM-dd")
+    $oneweekbeforeexpiry = ($expires).AddDays(-7).ToString("yyyy-MM-dd")
+    $onedaybeforeexpiry = ($expires).AddDays(-1).ToString("yyyy-MM-dd")
+
+    if($date -eq $twoweeksbeforeexpiry){
+        $subject = "$certificatename Certificate in KeyVault $keyvaults expires in two weeks"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    elseif($date -eq $oneweekbeforeexpiry){
+        $subject = "$certificatename Certificate in KeyVault $keyvaults expires in one week"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    elseif($date -eq $onedaybeforeexpiry){
+        $subject = "$certificatename Certificate in KeyVault $keyvaults expires in one day"
+        Write-Output $subject
+
+        $Body = [PSCustomObject]@{
+        To      = "<email>"
+        Subject = "$subject"
+        Body    = "This is an automated notification from Azure: $subject . Please look into renewing."
+        }
+
+        # Create a line that creates a JSON from this object
+        $JSONBody = $Body | ConvertTo-Json
+
+        Invoke-RestMethod -Method POST -Uri $logicappurl -Body $JSONBody -ContentType 'application/json'
+    }
+    }
+
+}
 }
 catch
 {
