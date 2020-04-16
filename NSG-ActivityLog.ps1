@@ -109,7 +109,7 @@ $resulting | Export-Csv -Path $path
 
 #Set storage context and date
 
-$sastoken = Get-AutomationVariable -Name "PRDSASToken"
+$sastoken = Get-AutomationVariable -Name $prdsastoken
 $context = New-AzStorageContext -StorageAccountName $stgaccname -SasToken $sastoken
 
 $files = Get-ChildItem "$env:TEMP\"
