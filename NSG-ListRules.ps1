@@ -43,14 +43,14 @@ $nsglist = (Get-AzNetworkSecurityGroup -ResourceGroupName $rg).Name
 foreach($nsgitem in $nsglist){
     $nsg = Get-AzNetworkSecurityGroup -ResourceGroupName $rg -Name $nsgitem
 
-    #NSG rules
+        #NSG rules
     $nsgrulestable=@()
  
     $nsgrules = $nsg.SecurityRules
     foreach($nsgrule in $nsgrules){
         $Priority = $nsgrule.Priority
         $Name = $nsgrule.Name
-        $Description = $nsgrule.Description
+        $Description = $nsgrule.Description -replace "`n",", "
         $Protocol = $nsgrule.Protocol
         $SourcePortRange = $nsgrule.SourcePortRange
         $SourceAddressPrefix = $nsgrule.SourceAddressPrefix
@@ -58,9 +58,18 @@ foreach($nsgitem in $nsglist){
         $DestinationAddressPrefix = $nsgrule.DestinationAddressPrefix
         $Access = $nsgrule.Access
         $Direction = $nsgrule.Direction
-        $nsgrulestable += $nsgrule | select @{n='Priority';e={$Priority}}, @{n='Name';e={$Name}}, @{n='Description';e={$Description}}, @{n='Protocol';e={$Protocol}},
-        @{n='SourcePortRange';e={$SourcePortRange}}, @{n='SourceAddressPrefix';e={$SourceAddressPrefix}}, @{n='DestinationPortRange';e={$DestinationPortRange}}, 
-        @{n='DestinationAddressPrefix';e={$DestinationAddressPrefix}}, @{n='Access';e={$Access}}, @{n='Direction';e={$Direction}}
+
+        $nsgrulestable += new-object psobject -property @{Priority="$Priority";
+                                                        Name="$Name";
+                                                        Description="$Description";
+                                                        Protocol="$Protocol";
+                                                        SourcePortRange="$SourcePortRange";
+                                                        SourceAddressPrefix="$SourceAddressPrefix";
+                                                        DestinationPortRange="$DestinationPortRange";
+                                                        DestinationAddressPrefix="$DestinationAddressPrefix";
+                                                        Access="$Access";
+                                                        Direction="$Direction";
+                                                    }
 
     
     }
@@ -72,7 +81,7 @@ foreach($nsgitem in $nsglist){
     foreach($defaultnsgrule in $defaultnsgrules){
         $Priority = $defaultnsgrule.Priority
         $Name = $defaultnsgrule.Name
-        $Description = $defaultnsgrule.Description
+        $Description = $nsgrule.Description -replace "`n",", "
         $Protocol = $defaultnsgrule.Protocol
         $SourcePortRange = $defaultnsgrule.SourcePortRange
         $SourceAddressPrefix = $defaultnsgrule.SourceAddressPrefix
@@ -80,17 +89,29 @@ foreach($nsgitem in $nsglist){
         $DestinationAddressPrefix = $defaultnsgrule.DestinationAddressPrefix
         $Access = $defaultnsgrule.Access
         $Direction = $defaultnsgrule.Direction
-        
-        $defaultruleslist += $defaultnsgrule | select @{n='Priority';e={$Priority}}, @{n='Name';e={$Name}}, @{n='Description';e={$Description}}, @{n='Protocol';e={$Protocol}},
-        @{n='SourcePortRange';e={$SourcePortRange}}, @{n='SourceAddressPrefix';e={$SourceAddressPrefix}}, @{n='DestinationPortRange';e={$DestinationPortRange}}, 
-        @{n='DestinationAddressPrefix';e={$DestinationAddressPrefix}}, @{n='Access';e={$Access}}, @{n='Direction';e={$Direction}}
-    }
 
-    #Combining default and other NSG rules into one list and exporting list
+        $defaultruleslist += new-object psobject -property @{Priority="$Priority";
+                                                            Name="$Name";
+                                                            Description="$Description";
+                                                            Protocol="$Protocol";
+                                                            SourcePortRange="$SourcePortRange";
+                                                            SourceAddressPrefix="$SourceAddressPrefix";
+                                                            DestinationPortRange="$DestinationPortRange";
+                                                            DestinationAddressPrefix="$DestinationAddressPrefix";
+                                                            Access="$Access";
+                                                            Direction="$Direction";
+                                                            }                                                       
+
+}
+
+#Combining default and other NSG rules into one list and exporting list
     $nsgrulestable += $defaultruleslist
 
     $path =  "$env:TEMP\$nsgitem" + "_" + $lastMonthNumber + "_" + $lastMonthYear + ".csv"
-    $nsgrulestablesorted = $nsgrulestable | sort Priority | Export-Csv -Path $path
+    $nsgrulestablesorted = $nsgrulestable | Sort-Object {[int]$_.Priority} 
+
+    $nsgrulestablesorted | select Priority, Name, Description, Protocol, SourcePortRange, SourceAddressPrefix, DestinationPortRange, DestinationAddressPrefix, Access, Direction |
+                            Export-Csv $path -NoTypeInformation
     $blobpath = "$lastMonthYear" + "-" + "$lastMonthNumber" + "/" + "$nsgitem" + ".csv"
     
     Set-AzStorageBlobContent -Context $context -Container "nsg-ruleslist" -File $path -Blob $blobpath -Force
